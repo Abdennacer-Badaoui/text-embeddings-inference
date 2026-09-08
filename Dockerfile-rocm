@@ -62,6 +62,7 @@ FROM rocm/pytorch:rocm7.2.2_ubuntu22.04_py3.10_pytorch_release_2.10.0 AS rocm
 LABEL maintainer="Hugging Face"
 
 ENV HUGGINGFACE_HUB_CACHE=/data \
+    KERNELS_CACHE=/kernels \
     PORT=80
 
 RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
@@ -82,6 +83,11 @@ COPY backends/python/server/pyproject.toml backends/python/server/pyproject.toml
 COPY backends/python/server/requirements-amd.txt backends/python/server/requirements.txt
 
 RUN cd backends/python/server && make install
+
+# Pre-download the compute kernels pinned in kernels.lock into the image
+# (KERNELS_CACHE), so the container loads them offline at runtime and never
+# reaches out to the Hub — keeping it network-isolatable.
+RUN cd backends/python/server && kernels download .
 
 FROM rocm AS grpc
 

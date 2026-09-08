@@ -11,18 +11,11 @@ from text_embeddings_server.models import Model
 from text_embeddings_server.models.types import FlashBatch, Embedding, PaddedBatch
 from text_embeddings_server.utils.flash_attn import attention, ROCM_HAS_FA_VARLEN
 from text_embeddings_server.utils.device import is_rocm, use_ipex
+from text_embeddings_server.utils.kernels import get_triton_layer_norm
 
 tracer = trace.get_tracer(__name__)
 
-_triton_layer_norm = None
-if is_rocm():
-    try:
-        from kernels import get_kernel as _get_kernel
-        _triton_layer_norm = _get_kernel(
-            "kernels-community/triton-layer-norm", revision="v0.1.0"
-        )
-    except Exception:
-        pass
+_triton_layer_norm = get_triton_layer_norm()
 
 
 def add_layer_norm(
